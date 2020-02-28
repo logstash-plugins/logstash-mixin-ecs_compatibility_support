@@ -1,14 +1,16 @@
 # ECS Compatibility Support Mixin
 
+[![Build Status](https://travis-ci.org/logstash-plugins/logstash-mixin-ecs_compatibility_support.svg?branch=master)](https://travis-ci.org/logstash-plugins/logstash-mixin-ecs_compatibility_support)
+
 This gem provides an API-compatible implementation of ECS-compatiblity mode,
 allowing plugins to be explicitly configured with `ecs_compatibility` in a way
 that respects pipeline- and process-level settings where they are available.
 It can be added as a dependency of any plugin that wishes to implement an
-ECS-compatibility mode, while still supporting older Logstash versions.
+ECS-compatibility mode while still supporting older Logstash versions.
 
 ## Usage
 
-1. Add this gem as a runtime dependency of your plugin:
+1. Add version `~>1.0` of this gem as a runtime dependency of your Logstash plugin's `gemspec`:
 
     ~~~ ruby
     Gem::Specification.new do |s|
@@ -18,8 +20,8 @@ ECS-compatibility mode, while still supporting older Logstash versions.
     end
     ~~~
 
-2. In your plugin code, require this library and include it into your class or
-   module that already inherits `LogStash::Util::Loggable`:
+2. In your plugin code, require this library and include it into your plugin class
+   that already inherits `LogStash::Plugin`:
 
     ~~~ ruby
     require 'logstash/plugin_mixins/ecs_compatibility_support'

@@ -15,13 +15,13 @@ module LogStash
     # this adapter will _NOT_ override the existing implementation.
     module ECSCompatibilitySupport
       ##
-      # @param: a class that inherits `LogStash::Plugin` and includes
-      #         `LogStash::Config::Mixin`, typically one descending from one of
-      #         the four plugin base classes (e.g., `LogStash::Inputs::Base`)
+      # @api internal (use: `LogStash::Plugin::include`)
+      # @param: a class that inherits `LogStash::Plugin`, typically one
+      #         descending from one of the four plugin base classes (e.g.,
+      #         `LogStash::Inputs::Base`)
       # @return [void]
       def self.included(base)
         fail(ArgumentError, "`#{base}` must inherit LogStash::Plugin") unless base < LogStash::Plugin
-        fail(ArgumentError, "`#{base}` must include LogStash::Config::Mixin") unless base < LogStash::Config::Mixin
 
         # If our base does not include an `ecs_compatibility` config option,
         # include the legacy adapter to ensure it gets defined.      
