@@ -31,7 +31,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport do
       LogStash::Outputs::Base
     ].each do |base_class|
       context "that inherits from `#{base_class}`" do
-        native_support_for_ecs_compatibility = base_class.method_defined?(:ecs_compatibility)
+        native_support_for_ecs_compatibility = base_class.method_defined?(:ecs_compatibility?)
 
         let(:plugin_base_class) { base_class }
 
@@ -46,9 +46,12 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport do
             plugin_class.send(:include, ecs_compatibility_support)
           end
 
-          it 'supports an `ecs_compatibility` option' do
+          it 'supports an `ecs_compatibility` config option' do
             expect(plugin_class.get_config).to include('ecs_compatibility')
-            expect(plugin_class.method_defined?(:ecs_compatibility)).to be true
+          end
+
+          it 'defines an `ecs_compatibility?` method' do
+            expect(plugin_class.method_defined?(:ecs_compatibility?)).to be true
           end
 
           # depending on which version of Logstash is running, we either expect
@@ -63,16 +66,19 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport do
             end
 
             # TODO: Remove once ECS Compatibility config is included in one or
-            # more Logstash release branches. This speculative spec is meant to
-            # run on Logstashes prior to the introduction of a core implementation.
+            #       more Logstash release branches. This speculative spec is meant
+            #       to prove that this implementation will not override an existing
+            #       implementation.
             context 'if base class were to include ecs_compatibility config' do
               let(:plugin_base_class) do
                 Class.new(super()) do
                   config :ecs_compatibility, :validate => :boolean, :default => false
+                  def ecs_compatibility?
+                  end
                 end
               end
               before(:each) do
-                expect(plugin_base_class.method_defined?(:ecs_compatibility)).to be true
+                expect(plugin_base_class.method_defined?(:ecs_compatibility?)).to be true
               end
               its(:ancestors) { is_expected.to_not include(ecs_compatibility_support::LegacyAdapter) }
             end
@@ -87,27 +93,18 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport do
 
             context 'with `ecs_compatibility => true`' do
               let(:plugin_options) { super().merge('ecs_compatibility' => 'true') }
-              its(:ecs_compatibility) { should be true }
-              it 'populates the @ecs_compatibility ivar with `true`' do
-                expect(instance.send(:instance_variable_get, :@ecs_compatibility)).to be true
-              end
+              its(:ecs_compatibility?) { should be true }
             end
 
             context 'with `ecs_compatibility => false`' do
               let(:plugin_options) { super().merge('ecs_compatibility' => 'false') }
-              its(:ecs_compatibility) { should be false }
-              it 'populates the @ecs_compatibility ivar with `false`' do
-                expect(instance.send(:instance_variable_get, :@ecs_compatibility)).to be false
-              end
+              its(:ecs_compatibility?) { should be false }
             end
 
             # we only specify default behaviour in cases where native support is _NOT_ provided.
             unless native_support_for_ecs_compatibility
               context 'without an `ecs_compatibility` directive' do
-                its(:ecs_compatibility) { should be false }
-                it 'populates the @ecs_compatibility ivar with `false`' do
-                  expect(instance.send(:instance_variable_get, :@ecs_compatibility)).to be false
-                end
+                its(:ecs_compatibility?) { should be false }
               end
             end
           end

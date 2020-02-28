@@ -33,12 +33,14 @@ ECS-compatibility mode while still supporting older Logstash versions.
     end
     ~~~
 
-3. Use the `@ecs_compatibility` value; your plugin does not need to know whether
-   this config option was provided by Logstash core or by this gem.
+3. Use the `ecs_compatibility?` method, which will reflect the user's desired
+   ECS-Compatibility mode after the plugin has been sent `#config_init`; your
+   plugin does not need to know whether the user specified it in their plugin
+   config or its value was provided by Logstash.
 
     ~~~ ruby
       def register
-        if @ecs_compatibility
+        if ecs_compatibility?
           # ...
         else
           # ...
