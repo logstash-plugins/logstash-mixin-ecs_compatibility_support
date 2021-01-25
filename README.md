@@ -108,7 +108,7 @@ unlikely to diverge and introduce bugs.
       end
     ~~~
 
-   NOTE: `ecs_select` is should only be used during plugin initialization and
+   NOTE: `ecs_select` should only be used during plugin initialization and
    not during event-by-event processing.
 
 ## Development
