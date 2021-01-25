@@ -85,6 +85,9 @@ module LogStash
             @active_mode = active_mode
           end
 
+          attr_reader :active_mode
+          attr_reader :supported_modes
+
           # With the active mode, select one of the provided options.
           # @param defined_choices [Hash{Symbol=>Object}]: the options to chose between.
           #                        it is an `ArgumentError` to provide a different set of
