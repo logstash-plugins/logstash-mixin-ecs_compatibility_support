@@ -8,7 +8,7 @@ that respects pipeline- and process-level settings where they are available.
 It can be added as a dependency of any plugin that wishes to implement one or
 more ECS-compatibility modes while still supporting older Logstash versions.
 
-## Usage
+## Usage (simple)
 
 1. Add version `~>1.0` of this gem as a runtime dependency of your Logstash plugin's `gemspec`:
 
@@ -56,6 +56,60 @@ more ECS-compatibility modes while still supporting older Logstash versions.
         end
       end
     ~~~
+
+## Usage (advanced)
+
+Release 1.1 of this support gem includes support for constraining a plugin
+to only operate in specified ECS-Compatibility modes, and advanced support for
+runtime selectors that provide developers a way to provide alternate _values_
+during initialization based on the instantiated plugin's effective
+`ecs_compatibility` mode. This is helpful in plugins that define large field
+mappings, because it allows those mappings to be side-by-side where they are
+unlikely to diverge and introduce bugs.
+
+1. Add version `~>1.1` of this gem as a runtime dependency of your Logstash plugin's `gemspec`:
+
+    ~~~ ruby
+    Gem::Specification.new do |s|
+      # ...
+
+      s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~>1.1'
+    end
+    ~~~
+
+2. In your plugin code, require this library and include it into your plugin class
+   that already inherits `LogStash::Plugin`, but this time specify which versions
+   of ECS your plugin supports:
+
+    ~~~ ruby
+    require 'logstash/plugin_mixins/ecs_compatibility_support'
+
+    class LogStash::Inputs::Foo < Logstash::Inputs::Base
+      include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1)
+
+      # ...
+    end
+    ~~~
+
+   This prevents the plugin from being instantiated with an unsupported mode,
+   whether that mode was explicitly defined for the plugin instance or implictly
+   defined by the pipeline in which the plugin is run.
+
+3. As in the simple usage example, you can use the `ecs_compatibility` method.
+
+   But when supported versions are specified, you can also use the `ecs_select`
+   method to define alternates in-line. At runtime, the correct value will be
+   selected based on the current effective `ecs_compatibility` mode.
+
+    ~~~ ruby
+      def register
+        @field_hostname = ecs_select[disabled: "hostname", v1: "[host][name]"]
+        @field_hostip   = ecs_select[disabled: "ip",       v1: "[host][ip]"  ]
+      end
+    ~~~
+
+   NOTE: `ecs_select` should only be used during plugin initialization and
+   not during event-by-event processing.
 
 ## Development
 

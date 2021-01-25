@@ -142,3 +142,18 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport do
   end
 end
 
+describe 'LogStash::PluginMixins::ECSCompatibilitySupport()' do
+  context 'with no arguments' do
+    it 'returns LogStash::PluginMixins::ECSCompatibilitySupport' do
+      expect(LogStash::PluginMixins::ECSCompatibilitySupport()).to eq(LogStash::PluginMixins::ECSCompatibilitySupport)
+    end
+  end
+  context 'with symbol arguments' do
+    it 'returns a properly-configured LogStash::PluginMixins::ECSCompatibilitySupport::Selector' do
+      selector_module = LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1)
+      expect(selector_module).to be_a_kind_of(LogStash::PluginMixins::ECSCompatibilitySupport::Selector)
+      expect(selector_module.ecs_modes_supported).to contain_exactly(:disabled,:v1)
+    end
+  end
+end
+

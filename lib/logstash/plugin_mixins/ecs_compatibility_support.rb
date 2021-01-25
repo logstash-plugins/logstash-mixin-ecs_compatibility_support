@@ -17,9 +17,9 @@ module LogStash
     module ECSCompatibilitySupport
       ##
       # @api internal (use: `LogStash::Plugin::include`)
-      # @param: a class that inherits `LogStash::Plugin`, typically one
-      #         descending from one of the four plugin base classes (e.g.,
-      #         `LogStash::Inputs::Base`)
+      # @param base [Class]: a class that inherits `LogStash::Plugin`, typically one
+      #                      descending from one of the four plugin base classes
+      #                      (e.g., `LogStash::Inputs::Base`)
       # @return [void]
       def self.included(base)
         fail(ArgumentError, "`#{base}` must inherit LogStash::Plugin") unless base < LogStash::Plugin
@@ -99,6 +99,13 @@ module LogStash
           end
         end
       end
+    end
+
+    def self.ECSCompatibilitySupport(*supported_versions)
+      return ECSCompatibilitySupport if supported_versions.empty?
+
+      require_relative "ecs_compatibility_support/selector"
+      ECSCompatibilitySupport::Selector.new(*supported_versions)
     end
   end
 end
