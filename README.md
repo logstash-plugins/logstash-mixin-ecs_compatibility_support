@@ -67,13 +67,13 @@ during initialization based on the instantiated plugin's effective
 mappings, because it allows those mappings to be side-by-side where they are
 unlikely to diverge and introduce bugs.
 
-1. Add version `~>1.1` of this gem as a runtime dependency of your Logstash plugin's `gemspec`:
+1. Add version `~>1.2` of this gem as a runtime dependency of your Logstash plugin's `gemspec`:
 
     ~~~ ruby
     Gem::Specification.new do |s|
       # ...
 
-      s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~>1.1'
+      s.add_runtime_dependency 'logstash-mixin-ecs_compatibility_support', '~>1.2'
     end
     ~~~
 
@@ -95,6 +95,20 @@ unlikely to diverge and introduce bugs.
    whether that mode was explicitly defined for the plugin instance or implictly
    defined by the pipeline in which the plugin is run.
 
+   You can also optionally provide an alias mapping, for when your plugin supports
+   multiple versions of ECS that are largely identical to each other. This can be
+   especially helpful when using `ecs_select`.
+
+    ~~~ ruby
+    require 'logstash/plugin_mixins/ecs_compatibility_support'
+
+    class LogStash::Inputs::Foo < Logstash::Inputs::Base
+      include LogStash::PluginMixins::ECSCompatibilitySupport(:disabled,:v1,:v8 => :v1)
+
+      # ...
+    end
+    ~~~
+
 3. As in the simple usage example, you can use the `ecs_compatibility` method.
 
    But when supported versions are specified, you can also use the `ecs_select`
@@ -107,6 +121,9 @@ unlikely to diverge and introduce bugs.
         @field_hostip   = ecs_select[disabled: "ip",       v1: "[host][ip]"  ]
       end
     ~~~
+
+   If you initialized the mixin with an alias mapping, missing values will
+   be resolved by their alias.
 
    NOTE: `ecs_select` should only be used during plugin initialization and
    not during event-by-event processing.

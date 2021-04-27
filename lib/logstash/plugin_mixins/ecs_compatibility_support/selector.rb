@@ -26,13 +26,30 @@ module LogStash
           base.include(ECSCompatibilitySupport)
         end
 
+        EMPTY_HASH = {}.freeze
+        private_constant :EMPTY_HASH
+
         ##
         # @api private
         # @see ECSCompatibilitySupport()
         # @param ecs_modes_supported
-        def initialize(*ecs_modes_supported)
+        def initialize(*ecs_modes_and_optional_alias_map)
+          selector_module = self
+
+          alias_mapping = ecs_modes_and_optional_alias_map.last.kind_of?(Hash) ? ecs_modes_and_optional_alias_map.pop.dup.freeze : EMPTY_HASH
+          ecs_modes_supported = ecs_modes_and_optional_alias_map.dup
+
           fail(ArgumentError, "one or more ecs_modes_supported required") if ecs_modes_supported.empty?
           fail(ArgumentError, "ecs_modes_supported must only contain symbols") unless ecs_modes_supported.all? { |s| s.kind_of?(Symbol) }
+
+          fail(ArgumentError, "alias names must be symbols") unless alias_mapping.keys.all? { |v| v.kind_of?(Symbol) }
+          fail(ArgumentError, "alias targets must be symbols") unless alias_mapping.values.all? { |v| v.kind_of?(Symbol) }
+          fail(ArgumentError, "alias must not redefine") if alias_mapping.keys.any? {|v| ecs_modes_supported.include?(v) }
+          fail(ArgumentError, "alias map must not have circular references") if circular_references_present?(alias_mapping)
+
+          ecs_modes_supported |= alias_mapping.keys
+
+          fail(ArgumentError, "alias target doesn't exist") if alias_mapping.values.any? { |v| !ecs_modes_supported.include?(v) }
 
           ecs_modes_supported.freeze
 
@@ -49,7 +66,7 @@ module LogStash
                         "Supported modes are: #{ecs_modes_supported}"
               fail(LogStash::ConfigurationError, message)
             end
-            @_ecs_select = State.new(ecs_modes_supported, effective_ecs_mode)
+            @_ecs_select = selector_module.state_for(effective_ecs_mode)
           end
 
           ##
@@ -58,12 +75,34 @@ module LogStash
           define_method(:ecs_select) { @_ecs_select }
 
           define_singleton_method(:ecs_modes_supported) { ecs_modes_supported }
+
+          define_singleton_method(:state_for) do |selected_value|
+            unless ecs_modes_supported.include?(selected_value)
+              fail(NotImplementedError, "Unsupported state `#{selected_value}` (expected one of #{ecs_modes_supported})")
+            end
+            State.new(ecs_modes_supported, selected_value, alias_mapping)
+          end
         end
 
         ##
         # @return [String]
         def name
           "#{Selector}(#{ecs_modes_supported.join(',')})"
+        end
+
+        private
+
+        def circular_references_present?(alias_candidates)
+          alias_candidates.each do |candidate, target|
+            current = target
+            (alias_candidates.size + 1).times do
+              return true if current == candidate
+              break unless alias_candidates.include?(current)
+              current = alias_candidates.fetch(current)
+            end
+          end
+
+          false
         end
 
         ##
@@ -77,12 +116,15 @@ module LogStash
         # @api private
         class State
           ##
-          # @api private
+          # @api private -- Use Selector#state_for(current_value)
           # @param supported_modes [Array<Symbol>]
           # @param active_mode [Symbol]
-          def initialize(supported_modes, active_mode)
+          def initialize(supported_modes, active_mode, alias_map=EMPTY_HASH)
+            fail(ArgumentError, "invalid alias mapping") unless alias_map.flatten.all? {|v| supported_modes.include?(v) }
+
             @supported_modes = supported_modes
             @active_mode = active_mode
+            @alias_map = alias_map
           end
 
           attr_reader :active_mode
@@ -102,13 +144,20 @@ module LogStash
 
             fail(ArgumentError, "at least one choice must be defined") if defined_choices.empty?
 
-            missing = @supported_modes - defined_choices.keys
+            missing = @supported_modes - (defined_choices.keys + @alias_map.keys)
             fail(ArgumentError, "missing one or more required choice definition #{missing}") if missing.any?
 
             unknown = defined_choices.keys - @supported_modes
             fail(ArgumentError, "unknown choices #{unknown}; valid choices are #{@supported_modes}") if unknown.any?
 
-            defined_choices.fetch(@active_mode)
+            # resolve aliases of missing choices
+            effective_mode = @active_mode
+            @alias_map.size.times do # theoretical upper limit of alias chain
+              break if defined_choices.include?(effective_mode)
+              effective_mode = @alias_map.fetch(effective_mode)
+            end
+
+            defined_choices.fetch(effective_mode)
           end
           alias_method :[], :value_from
         end

@@ -101,6 +101,10 @@ module LogStash
       end
     end
 
+    ##
+    # @override ECSCompatibilitySupport(*supported_versions, alias_map={})
+    #   @param supported_versions [Array[Symbol]]: the supported ECS versions
+    #   @param alias_map [Hash{Symbol=>Symbol}]: an optional mapping of aliases (keys) to supported version (values)
     def self.ECSCompatibilitySupport(*supported_versions)
       return ECSCompatibilitySupport if supported_versions.empty?
 
