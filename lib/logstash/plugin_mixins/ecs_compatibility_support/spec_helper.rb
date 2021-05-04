@@ -28,15 +28,13 @@ module LogStash
       # ~~~
       module SpecHelper
         def ecs_compatibility_matrix(*supported_modes,&block)
-          if supported_modes.empty? || supported_modes.any? { |mode| !mode.kind_of?(Symbol) }
-            fail(ArgumentError, "ecs_compatibility_matrix(*supported_modes) requires one or more symbol supported_modes")
-          end
+          ecs_selector = Selector.new(*supported_modes)
 
-          supported_modes.each do |active_mode|
+          ecs_selector.ecs_modes_supported.each do |active_mode|
             context "`ecs_compatibility => #{active_mode}`" do
               let(:ecs_compatibility) { active_mode }
 
-              ecs_select = Selector::State.new(supported_modes, active_mode)
+              ecs_select = ecs_selector.state_for(active_mode)
               instance_exec(ecs_select, &block)
             end
           end

@@ -34,6 +34,27 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::Selector do
         expect(selector_mod.name).to include('v1')
       end
     end
+    it 'accepts an alias list' do
+      selector_mod = described_class.new(:disabled, :v1, :v8 => :v1)
+      aggregate_failures do
+        expect(selector_mod.ecs_modes_supported).to contain_exactly(:disabled, :v1, :v8)
+        expect(selector_mod.name).to include('disabled')
+        expect(selector_mod.name).to include('v1')
+        expect(selector_mod.name).to include('v8')
+      end
+    end
+    it 'rejects alias list that doesnt resolve' do
+      expect { described_class.new(:disabled, :v1, :v8 => :v2) }.to raise_error(ArgumentError, /alias target/)
+    end
+    it 'rejects tight circular aliases' do
+      expect { described_class.new(:disabled, :v1, :v8 => :v8) }.to raise_error(ArgumentError, /circular/)
+    end
+    it 'rejects loose circular aliases' do
+      expect { described_class.new(:disabled, :v1, :v8 => :v7, :v7 => :v6, :v6 => :v8) }.to raise_error(ArgumentError, /circular/)
+    end
+    it 'rejects alias that redefines concrete definition' do
+      expect { described_class.new(:disabled, :v1, :v1 => :disabled) }.to raise_error(ArgumentError, /redefine/)
+    end
   end
   context 'included into a class' do
     let(:ecs_compatibility_support) { LogStash::PluginMixins::ECSCompatibilitySupport }
@@ -110,6 +131,19 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::Selector do
             end
             it 'selects the correct effective value' do
               expect(ecs_select[disabled: "nope", v1: "winner"]).to eq("winner")
+            end
+            context 'when aliases are given' do
+              let(:ecs_supported_modes) { [:disabled, :v1, :v8 => :v2, :v2 => :v1 ] }
+              let(:ecs_effective_mode) { :v8 }
+              it 'selects a given value' do
+                expect(ecs_select[disabled: "nope", v1: "nah", v8: "hooray"]).to eq("hooray")
+              end
+              it 'resolves the deepest alias of a missing value' do
+                expect(ecs_select[disabled: "sad-trombone", v1: "wahoo"]).to eq("wahoo")
+              end
+              it 'resolves the intermediate alias of a missing value' do
+                expect(ecs_select[disabled: "sad-trombone", v1: "oh-no", v2: "nice"]).to eq("nice")
+              end
             end
           end
         end
