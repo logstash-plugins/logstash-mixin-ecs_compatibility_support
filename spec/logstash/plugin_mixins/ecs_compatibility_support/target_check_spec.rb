@@ -22,39 +22,44 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
 
           config :target, :validate => :string
 
-          def register
-            check_target_set_in_ecs_mode
-          end
+          def register; 42 end
+
         end
       end
 
       it 'skips check when ECS disabled' do
         plugin = plugin_class.new('ecs_compatibility' => 'disabled')
-        expect( plugin.register ).to be nil
+        allow( plugin.logger ).to receive(:info)
+        expect( plugin.register ).to eql 42
+        expect( plugin.logger ).to_not have_received(:info)
       end
 
       it 'warns when target is not set in ECS mode' do
         plugin = plugin_class.new('ecs_compatibility' => 'v1')
         allow( plugin.logger ).to receive(:info)
-        expect( plugin.register ).to be false
+        expect( plugin.register ).to eql 42
         expect( plugin.logger ).to have_received(:info).with(/ECS compatibility is enabled but no `target` option was specified/)
       end
 
       it 'does not warn when target is set' do
         plugin = plugin_class.new('ecs_compatibility' => 'v1', 'target' => 'foo')
         allow( plugin.logger ).to receive(:info)
-        expect( plugin.register ).to be true
+        expect( plugin.register ).to eql 42
         expect( plugin.logger ).to_not have_received(:info)
       end
 
     end
 
-    it 'skips check when no target config' do
+    it 'fails check when no target config' do
       plugin_class = Class.new(LogStash::Filters::Base) do
         include LogStash::PluginMixins::ECSCompatibilitySupport
         include LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck
+
+        def register; end
+
       end
-      expect( plugin_class.new({}).send(:check_target_set_in_ecs_mode) ).to be nil
+      plugin = plugin_class.new('ecs_compatibility' => 'v1')
+      expect { plugin.register }.to raise_error NameError
     end
 
   end

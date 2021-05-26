@@ -17,7 +17,8 @@ module LogStash
         # @return [void]
         def self.included(base)
           fail(ArgumentError, "`#{base}` must inherit LogStash::Plugin") unless base < LogStash::Plugin
-          fail(ArgumentError, "`#{base}` must include #{ECSCompatibilitySupport}") unless base.method_defined?(:ecs_compatibility)
+          fail(ArgumentError, "`#{base}` must include #{ECSCompatibilitySupport}") unless base < ECSCompatibilitySupport
+          base.prepend(RegisterDecorator)
         end
 
         TARGET_NOT_SET_MESSAGE = ("ECS compatibility is enabled but no `target` option was specified, " +
@@ -27,19 +28,27 @@ module LogStash
         private
 
         ##
-        # Logs an info message when ecs_compatibility is enabled but plugin has no `target` configuration specified.
-        # @note This method assumes a common plugin convention of using the target option.
-        # @return [nil] if ECS compatibility is disabled or no target option exists
+        # Check whether `target` is specified.
+        #
+        # @return [nil] if ECS compatibility is disabled
         # @return [true, false]
-        def check_target_set_in_ecs_mode
-          return if ecs_compatibility == :disabled || !respond_to?(:target)
-          if target.nil?
-            logger.info(TARGET_NOT_SET_MESSAGE)
-            return false
-          end
-          true
+        def target_set?
+          return if ecs_compatibility == :disabled
+          ! target.nil?
         end
 
+        module RegisterDecorator
+
+          ##
+          # Logs an info message when ecs_compatibility is enabled but plugin has no `target` configuration specified.
+          # @override
+          def register
+            super.tap do
+              logger.info(TARGET_NOT_SET_MESSAGE) if target_set? == false
+            end
+          end
+
+        end
       end
     end
   end
