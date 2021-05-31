@@ -59,7 +59,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
 
       end
       plugin = plugin_class.new('ecs_compatibility' => 'v1')
-      expect { plugin.register }.to raise_error NameError
+      expect { plugin.register }.to raise_error NameError, /\btarget\b/
     end
 
   end
