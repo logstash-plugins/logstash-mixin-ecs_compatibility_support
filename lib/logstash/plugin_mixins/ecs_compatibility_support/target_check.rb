@@ -30,11 +30,12 @@ module LogStash
         ##
         # Check whether `target` is specified.
         #
-        # @return [nil] if ECS compatibility is disabled
+        # @return [nil] if target is unspecified and ECS compatibility is disabled
         # @return [true, false]
         def target_set?
-          return if ecs_compatibility == :disabled
-          ! target.nil?
+          return true unless target.nil?
+          return nil if ecs_compatibility == :disabled
+          false # target isn't set
         end
 
         module RegisterDecorator
