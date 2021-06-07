@@ -21,9 +21,10 @@ module LogStash
           base.prepend(RegisterDecorator)
         end
 
-        TARGET_NOT_SET_MESSAGE = ("ECS compatibility is enabled but no `target` option was specified, " +
-            "it is recommended to set the option to avoid potential schema conflicts (if your data is ECS compliant " +
-            "or non-conflicting feel free to ignore this message)").freeze
+        TARGET_NOT_SET_MESSAGE = ("ECS compatibility is enabled but `target` option was not specified. " +
+            "This may cause fields to be set at the top-level of the event where they are likely to clash with the Elastic Common Schema. " +
+            "It is recommended to set the `target` option to avoid potential schema conflicts (if your data is ECS compliant " +
+            "or non-conflicting, feel free to ignore this message)").freeze
 
         private
 
