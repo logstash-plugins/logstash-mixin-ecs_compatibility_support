@@ -50,6 +50,7 @@ module LogStash
           end
 
         end
+        private_constant :RegisterDecorator
       end
     end
   end
