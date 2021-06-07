@@ -1,3 +1,6 @@
+# 1.3.0
+ - Feat: introduce a target check helper [#6](https://github.com/logstash-plugins/logstash-mixin-ecs_compatibility_support/pull/6) 
+
 # 1.2.0
  - Added support for resolution aliases, allowing a plugin that uses `ecs_select` to support multiple ECS versions with a single declaration.
 
