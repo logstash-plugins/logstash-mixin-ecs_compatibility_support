@@ -31,7 +31,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
         plugin = plugin_class.new('ecs_compatibility' => 'disabled')
         allow( plugin.logger ).to receive(:info)
         expect( plugin.register ).to eql 42
-        expect( plugin.logger ).to_not have_received(:info)
+        expect( plugin.logger ).to_not have_received(:info).with(a_string_including "`target` option")
       end
 
       it 'warns when target is not set in ECS mode' do
