@@ -21,4 +21,5 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'rspec', '~> 3.9'
   s.add_development_dependency 'rspec-its', '~>1.3'
   s.add_development_dependency 'logstash-codec-plain'
+  s.add_development_dependency 'logstash-codec-json'
 end
