@@ -1,3 +1,6 @@
+# 1.3.1
+ - Fix: target check helper provides better guidance when both a plugin and its codec provide `target` options [#9](https://github.com/logstash-plugins/logstash-mixin-ecs_compatibility_support/pull/9)
+
 # 1.3.0
  - Feat: introduce a target check helper [#6](https://github.com/logstash-plugins/logstash-mixin-ecs_compatibility_support/pull/6) 
 
