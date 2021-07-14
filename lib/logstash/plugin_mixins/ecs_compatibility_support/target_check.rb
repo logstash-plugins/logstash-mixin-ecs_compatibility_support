@@ -22,53 +22,38 @@ module LogStash
         end
 
         TARGET_NOT_SET_MESSAGE = ("ECS compatibility is enabled but `target` option was not specified. " +
-            "This may cause fields to be set at the top-level of the event where they are likely to clash with the Elastic Common Schema. " +
-            "It is recommended to set the `target` option to avoid potential schema conflicts (if your data is ECS compliant " +
-            "or non-conflicting, feel free to ignore this message)").freeze
+          "This may cause fields to be set at the top-level of the event where they are likely to clash with the Elastic Common Schema. " +
+          "It is recommended to set the `target` option to avoid potential schema conflicts (if your data is ECS compliant " +
+          "or non-conflicting, feel free to ignore this message)").freeze
+
+        MULTIPLE_TARGETS_MESSAGE = ("This plugin and its codec both specify a `target` option, which can lead to surprising results. " +
+          "In general, it is recommended to only set the codec's `target`.").freeze
+
+        PREFER_CODEC_TARGET_MESSAGE = ("Both this plugin and its codec provide a `target` option, but the codec's `target` was left unspecified. "+
+          "In general, it is recommended to only set the codec's `target`.").freeze
 
         private
 
         ##
         # Check whether `target` is specified.
-        # For the majority of plugins, they don't have `codec`, hence does a simple check on `target`
-        # The rest of plugins, mostly input plugins, if the `codec` support `target`, check whether `codec.target` is specified
         #
         # @return [nil] if target is unspecified and ECS compatibility is disabled
-        # @return [false, log_msg] when target is not set to the correct field
-        # @return [true] when target is set
+        # @return [true, false]
         def target_set?
+          return true unless target.nil?
           return nil if ecs_compatibility == :disabled
+          false # target isn't set
+        end
 
-          if self.respond_to?(:codec) && codec.respond_to?(:target)
-            if target && codec.target
-              #  targeting both is not good.
-              msg = "ECS compatibility is enabled but `target` options were set in both codec " +
-                "and plugin. This causes duplication of data in the same event. It is recommended to set " +
-                "`codec => #{codec.config_name} { target => #{codec.target.inspect} }` " +
-                "and remove `target => #{target.inspect}`"
-              [false, msg]
-            elsif target && !codec.target
-              # setting `target` causes `[event][original]` nested in `target`
-              msg = "ECS compatibility is enabled and `target` was set. " +
-                "It is recommended to set `codec => #{codec.config_name} { target => #{target.inspect} }` " +
-                "to have [event][original] in top-level"
-              [false, msg]
-            elsif !target && codec.target
-              # setting codec target is desired
-              [true]
-            else
-              # both are not set
-              msg = "ECS compatibility is enabled but `target` option was not specified in codec. " +
-                "This may cause fields to be set at the top-level of the event where they are likely to clash with the Elastic Common Schema. " +
-                "It is recommended to set `codec => #{codec.config_name} { target => YOUR_TARGET_FIELD_NAME }` " +
-                "to avoid potential schema conflicts (if your data is ECS compliant " +
-                "or non-conflicting, feel free to ignore this message)"
-              [false, msg]
-            end
-          else
-            return [true] unless target.nil?
-            [false, TARGET_NOT_SET_MESSAGE] # target isn't set
-          end
+        ##
+        # Check whether a codec is present and specifies a target.
+        #
+        # @return [nil] if codec not present or codec does not support target
+        # @return [true,false]
+        def codec_target_set?
+          return nil unless respond_to?(:codec)
+          return nil unless codec.respond_to?(:target)
+          !codec.target.nil?
         end
 
         module RegisterDecorator
@@ -78,8 +63,18 @@ module LogStash
           # @override
           def register
             super.tap do
-              is_set, log_msg = target_set?
-              logger.info(log_msg) if is_set == false
+              if target_set? && codec_target_set?
+                # both is not good. prefer codec.
+                logger.warn(MULTIPLE_TARGETS_MESSAGE)
+              elsif target_set? && (codec_target_set? == false)
+                # prefer codec's target option
+                logger.info(PREFER_CODEC_TARGET_MESSAGE +
+                              "To do so, remove the `target` directive from this plugin and instead define the codec with " +
+                              "`codec => #{codec.config_name} { target => #{target.inspect} }`")
+              elsif (target_set? == false) && codec_target_set?.nil?
+                # target desired but unset, codec doesn't provide
+                logger.info(TARGET_NOT_SET_MESSAGE)
+              end
             end
           end
 

@@ -88,19 +88,19 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
           end
         end
 
-        it 'warns when target and codec.target are not set' do
+        it 'does not warn when target and codec.target are not set' do
           plugin = plugin_class.new('ecs_compatibility' => 'v1')
           allow( plugin.logger ).to receive(:info)
           expect( plugin.register ).to eql 42
-          expect( plugin.logger ).to have_received(:info).with(a_string_including "ECS compatibility is enabled but `target` option was not specified in codec.")
+          expect( plugin.logger ).to_not have_received(:info).with(a_string_including "`target`")
         end
 
         it 'warns when target and codec.target are set' do
           json_codec = LogStash::Codecs::JSON.new('ecs_compatibility' => 'v1', 'target' => 'bar')
           plugin = plugin_class.new('ecs_compatibility' => 'v1', 'target' => 'foo', 'codec' => json_codec )
-          allow( plugin.logger ).to receive(:info)
+          allow( plugin.logger ).to receive(:warn)
           expect( plugin.register ).to eql 42
-          expect( plugin.logger ).to have_received(:info).with(a_string_including "ECS compatibility is enabled but `target` options were set")
+          expect( plugin.logger ).to have_received(:warn).with(a_string_including "This plugin and its codec both specify a `target` option")
         end
 
         it 'warns when target is set and codec.target is not set' do
@@ -108,7 +108,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
           plugin = plugin_class.new('ecs_compatibility' => 'v1', 'target' => 'foo', 'codec' => json_codec )
           allow( plugin.logger ).to receive(:info)
           expect( plugin.register ).to eql 42
-          expect( plugin.logger ).to have_received(:info).with(a_string_including "ECS compatibility is enabled and `target` was set")
+          expect( plugin.logger ).to have_received(:info).with(a_string_including "but the codec's `target` was left unspecified")
         end
 
         it 'does not warn when target is not set and codec.target is set' do
@@ -116,7 +116,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
           plugin = plugin_class.new('ecs_compatibility' => 'v1', 'target' => 'foo', 'codec' => json_codec )
           allow( plugin.logger ).to receive(:info)
           expect( plugin.register ).to eql 42
-          expect( plugin.logger ).to_not have_received(:info).with(a_string_including "`ECS compatibility")
+          expect( plugin.logger ).to_not have_received(:info).with(a_string_including "`target`")
         end
       end
     end
