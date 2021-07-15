@@ -1,6 +1,6 @@
 Gem::Specification.new do |s|
   s.name          = 'logstash-mixin-ecs_compatibility_support'
-  s.version       = '1.3.0'
+  s.version       = '1.3.1'
   s.licenses      = %w(Apache-2.0)
   s.summary       = "Support for the ECS-Compatibility mode introduced in Logstash 7.x, for plugins wishing to use this API on older Logstashes"
   s.description   = "This gem is meant to be a dependency of any Logstash plugin that wishes to use the ECS-Compatibility mode introduced in Logstash 7.x while maintaining backward-compatibility with earlier Logstash releases. When used on older Logstash versions, this adapter provides an implementation of ECS-Compatibility mode that can be controlled at the plugin instance level."
