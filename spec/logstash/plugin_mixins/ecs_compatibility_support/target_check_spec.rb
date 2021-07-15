@@ -96,15 +96,15 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
         let(:plugin_params) { super().merge('codec' => codec) }
 
 
-        context "and neither the input's target nor the codec's target is set" do
-          context "and ECS compatibility is enabled" do
+        context "when neither the input's target nor the codec's target is set" do
+          context "when ECS compatibility is enabled" do
             let(:plugin_params) { super().merge('ecs_compatibility' => 'v1') }
             it "logs info advocating for setting the codec's target" do
               expect(plugin.register).to eq(42)
               expect(plugin.logger).to have_received(:info).with(a_string_including "set the `target` option on the codec")
             end
           end
-          context "and ECS compatibility is disabled" do
+          context "when ECS compatibility is disabled" do
             let(:plugin_params) { super().merge('ecs_compatibility' => 'disabled') }
             it "does not log info about targets" do
               expect(plugin.register).to eq(42)
@@ -113,7 +113,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
           end
         end
 
-        context "and both the input's target and the codec's target are specified" do
+        context "when both the input's target and the codec's target are specified" do
           let(:plugin_params) { super().merge('target' => 'outer') }
           let(:codec_params) { super().merge('target' => 'inner') }
 
@@ -123,7 +123,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
           end
         end
 
-        context "and target is provided in the input but not the codec" do
+        context "when target is provided in the input but not the codec" do
           let(:plugin_params) { super().merge('target' => 'outer') }
 
           it "logs info about preferring the codec's target" do
@@ -134,7 +134,7 @@ describe LogStash::PluginMixins::ECSCompatibilitySupport::TargetCheck do
           end
         end
 
-        context "and target is provided in the codec but not the input" do
+        context "when target is provided in the codec but not the input" do
           let(:codec_params) { super().merge('target' => 'inner') }
 
           it "does not log info about target" do
