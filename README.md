@@ -1,6 +1,6 @@
 # ECS Compatibility Support Mixin
 
-[![Build Status](https://travis-ci.com/logstash-plugins/logstash-mixin-ecs_compatibility_support.svg?branch=master)](https://travis-ci.com/logstash-plugins/logstash-mixin-ecs_compatibility_support)
+[![Unit Tests](https://github.com/logstash-plugins/logstash-mixin-ecs_compatibility_support/actions/workflows/unit-tests.yml/badge.svg?branch=main)](https://github.com/logstash-plugins/logstash-mixin-ecs_compatibility_support/actions/workflows/unit-tests.yml)
 
 This gem provides an API-compatible implementation of ECS-compatiblity mode,
 allowing plugins to be explicitly configured with `ecs_compatibility` in a way
